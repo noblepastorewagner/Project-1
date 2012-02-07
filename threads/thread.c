@@ -81,7 +81,7 @@ static tid_t allocate_tid (void);
    After calling this function, be sure to initialize the page
    allocator before trying to create any threads with
    thread_create().
-
+s
    It is not safe to call thread_current() until this function
    finishes. */
 void
@@ -117,6 +117,14 @@ thread_start (void)
   sema_down (&idle_started);
 }
 
+void thread_action_function(struct thread *thread, void *aux)
+{
+  if(thread -> ticks_left != -1)
+    thread -> ticks_left--;
+  if(thread -> ticks_left == 0)
+    sema_up(&(thread -> thread_sem));
+}
+
 /* Called by the timer interrupt handler at each timer tick.
    Thus, this function runs in an external interrupt context. */
 void
@@ -133,6 +141,8 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+
+  thread_foreach(thread_action_function, NULL);
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -469,6 +479,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->ticks_left = -1;
+  sema_init(&(t -> thread_sem), 0);
   list_push_back (&all_list, &t->allelem);
 }
 

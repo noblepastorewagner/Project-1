@@ -7,5 +7,5 @@ log: bochsout.txt
 panic: action=fatal
 user_shortcut: keys=ctrlaltdel
 clock: sync=none, time0=0
-ata0-master: type=disk, path=/tmp/k5Kp2gVIsQ.dsk, mode=flat, cylinders=1, heads=16, spt=63, translation=none
+ata0-master: type=disk, path=/tmp/sofsi1S1va.dsk, mode=flat, cylinders=1, heads=16, spt=63, translation=none
 com1: enabled=1, mode=term, dev=/dev/stdout

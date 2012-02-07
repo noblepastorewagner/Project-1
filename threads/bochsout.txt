@@ -1,6 +1,6 @@
 00000000000i[     ] Bochs x86 Emulator 2.5.1
 00000000000i[     ]   Built from SVN snapshot on January 6, 2012
-00000000000i[     ] Compiled on Jan 31 2012 at 10:22:41
+00000000000i[     ] Compiled on Jan 31 2012 at 09:58:41
 00000000000i[     ] System configuration
 00000000000i[     ]   processors: 1 (cores=1, HT threads=1)
 00000000000i[     ]   A20 line support: yes
@@ -29,7 +29,7 @@
 00000000000i[     ]   SB16 support: no
 00000000000i[     ]   USB support: no
 00000000000i[     ]   VGA extension support: vbe 
-00000000000i[MEM0 ] allocated memory at 0xb6a4e008. after alignment, vector=0xb6a4f000
+00000000000i[MEM0 ] allocated memory at 0xb6b74008. after alignment, vector=0xb6b75000
 00000000000i[MEM0 ] 4.00MB
 00000000000i[MEM0 ] mem block size = 0x00100000, blocks=4
 00000000000i[MEM0 ] rom at 0xfffe0000/131072 ('/usr/local/share/bochs/BIOS-bochs-latest')
@@ -56,7 +56,7 @@
 00000000000i[     ] init_dev of 'keyboard' plugin device by virtual method
 00000000000i[KBD  ] will paste characters every 1000 keyboard ticks
 00000000000i[     ] init_dev of 'harddrv' plugin device by virtual method
-00000000000i[HD   ] HD on ata0-0: '/tmp/k5Kp2gVIsQ.dsk', 'flat' mode
+00000000000i[HD   ] HD on ata0-0: '/tmp/sofsi1S1va.dsk', 'flat' mode
 00000000000i[IMG  ] hd_size: 516096
 00000000000i[HD   ] ata0-0: using specified geometry: CHS=1/16/63
 00000000000i[HD   ] Using boot sequence disk, none, none
@@ -115,25 +115,25 @@
 00000837388i[BIOS ] ata0-0: PCHS=1/16/63 translation=none LCHS=1/16/63
 00004718812i[BIOS ] IDE time out
 00007775206i[BIOS ] Booting from 0000:7c00
-02863401839i[     ] cpu loop quit, shutting down simulator
-02863401839i[CPU0 ] CPU is in protected mode (active)
-02863401839i[CPU0 ] CS.mode = 32 bit
-02863401839i[CPU0 ] SS.mode = 32 bit
-02863401839i[CPU0 ] | EAX=00000000  EBX=c0021393  ECX=c0105000  EDX=c0105000
-02863401839i[CPU0 ] | ESP=c0105fa8  EBP=c0105fc0  ESI=00000000  EDI=00000000
-02863401839i[CPU0 ] | IOPL=0 id vip vif ac vm rf nt of df IF tf SF zf af pf cf
-02863401839i[CPU0 ] | SEG sltr(index|ti|rpl)     base    limit G D
-02863401839i[CPU0 ] |  CS:0008( 0001| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] |  DS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] |  SS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] |  ES:0010( 0002| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] |  FS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] |  GS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
-02863401839i[CPU0 ] | EIP=c00213ba (c00213ba)
-02863401839i[CPU0 ] | CR0=0xe0010015 CR2=0x00000000
-02863401839i[CPU0 ] | CR3=0x00101000 CR4=0x00000000
-02863401839i[CPU0 ] 0xc00213ba>> jmp .-14 (0xc00213ae) : EBF2
-02863401839i[CMOS ] Last time is 2863 (Wed Dec 31 19:47:43 1969)
-02863401839i[XGUI ] Exit
-02863401839i[     ] restoring default signal behavior
-02863401839i[CTRL ] quit_sim called with exit code 1
+00074778000p[XGUI ] >>PANIC<< POWER button turned off.
+00074778000i[CPU0 ] CPU is in protected mode (halted)
+00074778000i[CPU0 ] CS.mode = 32 bit
+00074778000i[CPU0 ] SS.mode = 32 bit
+00074778000i[CPU0 ] | EAX=00000000  EBX=c00213e9  ECX=c0105000  EDX=c0105000
+00074778000i[CPU0 ] | ESP=c0105fa8  EBP=c0105fc0  ESI=00000000  EDI=00000000
+00074778000i[CPU0 ] | IOPL=0 id vip vif ac vm rf nt of df IF tf SF zf af pf cf
+00074778000i[CPU0 ] | SEG sltr(index|ti|rpl)     base    limit G D
+00074778000i[CPU0 ] |  CS:0008( 0001| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] |  DS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] |  SS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] |  ES:0010( 0002| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] |  FS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] |  GS:0010( 0002| 0|  0) 00000000 ffffffff 1 1
+00074778000i[CPU0 ] | EIP=c0021410 (c0021410)
+00074778000i[CPU0 ] | CR0=0xe0010015 CR2=0x00000000
+00074778000i[CPU0 ] | CR3=0x00101000 CR4=0x00000000
+00074778000i[CPU0 ] 0xc0021410>> jmp .-14 (0xc0021404) : EBF2
+00074778000i[CMOS ] Last time is 74 (Wed Dec 31 19:01:14 1969)
+00074778000i[XGUI ] Exit
+00074778000i[     ] restoring default signal behavior
+00074778000i[CTRL ] quit_sim called with exit code 1

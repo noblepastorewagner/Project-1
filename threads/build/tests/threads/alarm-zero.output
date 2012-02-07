@@ -20,7 +20,7 @@ Executing 'alarm-zero':
 (alarm-zero) end
 Execution of 'alarm-zero' complete.
 Timer: 46 ticks
-Thread: 0 idle ticks, 48 kernel ticks, 0 user ticks
+Thread: 0 idle ticks, 49 kernel ticks, 0 user ticks
 Console: 417 characters output
 Keyboard: 0 keys pressed
 Powering off...
