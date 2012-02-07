@@ -1,0 +1,12 @@
+diff -urp orig/bochs-2.5.1//cpu/cpudb/Makefile.in bochs-2.5.1/cpu/cpudb/Makefile.in
+--- orig/bochs-2.5.1//cpu/cpudb/Makefile.in	2012-01-14 03:31:12.418166444 -0500
++++ bochs-2.5.1/cpu/cpudb/Makefile.in	2012-01-14 03:53:16.531975350 -0500
+@@ -33,7 +33,7 @@ LDFLAGS = @LDFLAGS@
+ LIBS = @LIBS@
+ RANLIB = @RANLIB@
+ 
+-BX_INCDIRS = -I.. -I../.. -I$(srcdir)/../.. -I../../@INSTRUMENT_DIR@ -I$(srcdir)/../../@INSTRUMENT_DIR@
++BX_INCDIRS = -I. -I.. -I../.. -I$(srcdir)/../.. -I ../../../cpu -I../../@INSTRUMENT_DIR@ -I$(srcdir)/../../@INSTRUMENT_DIR@
+ 
+ CPUDB_OBJS = pentium_mmx.o \
+              amd_k6_2_chomper.o  \

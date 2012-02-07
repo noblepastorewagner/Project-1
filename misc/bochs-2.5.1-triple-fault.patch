@@ -1,0 +1,43 @@
+diff -urp orig/bochs-2.5.1//cpu/exception.cc bochs-2.5.1/cpu/exception.cc
+--- orig/bochs-2.5.1//cpu/exception.cc	2012-01-14 03:31:12.410166484 -0500
++++ bochs-2.5.1/cpu/exception.cc	2012-01-14 04:29:06.127534337 -0500
+@@ -863,6 +863,13 @@ void BX_CPU_C::exception(unsigned vector
+ 
+   if (BX_CPU_THIS_PTR errorno > 0) {
+     if (BX_CPU_THIS_PTR errorno > 2 || BX_CPU_THIS_PTR curr_exception == BX_ET_DOUBLE_FAULT) {
++#ifdef BX_GDBSTUB
++      if (bx_dbg.gdbstub_enabled) {
++        fprintf(stderr, "Triple fault: stopping for gdb\n");
++        BX_CPU_THIS_PTR ispanic = 1;
++        longjmp(BX_CPU_THIS_PTR jmp_buf_env, 1);
++      }
++#endif
+       // restore RIP/RSP to value before error occurred
+       RIP = BX_CPU_THIS_PTR prev_rip;
+       if (BX_CPU_THIS_PTR speculative_rsp)
+diff -urp orig/bochs-2.5.1//gdbstub.cc bochs-2.5.1/gdbstub.cc
+--- orig/bochs-2.5.1//gdbstub.cc	2012-01-14 03:31:12.450166199 -0500
++++ bochs-2.5.1/gdbstub.cc	2012-01-14 04:30:52.850732991 -0500
+@@ -505,19 +505,19 @@ static void debug_loop(void)
+ 
+         BX_INFO(("stepping"));
+         stub_trace_flag = 1;
++        bx_cpu.ispanic = 0;
+         bx_cpu.cpu_loop();
+         DEV_vga_refresh();
+         stub_trace_flag = 0;
+         BX_INFO(("stopped with %x", last_stop_reason));
+         buf[0] = 'S';
+-        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
+-            last_stop_reason == GDBSTUB_TRACE)
++        if (last_stop_reason == GDBSTUB_TRACE && !bx_cpu.ispanic)
+         {
+           write_signal(&buf[1], SIGTRAP);
+         }
+         else
+         {
+-          write_signal(&buf[1], SIGTRAP);
++          write_signal(&buf[1], SIGSEGV);
+         }
+         put_reply(buf);
+         break;

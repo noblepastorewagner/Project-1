@@ -1,0 +1,59 @@
+diff -urp orig/bochs-2.5.1//bochs.h bochs-2.5.1/bochs.h
+--- orig/bochs-2.5.1//bochs.h	2012-01-14 03:31:12.454166169 -0500
++++ bochs-2.5.1/bochs.h	2012-01-14 04:10:15.208088889 -0500
+@@ -384,6 +384,7 @@ BOCHSAPI extern logfunc_t *genlog;
+ void bx_gdbstub_init(void);
+ void bx_gdbstub_break(void);
+ int bx_gdbstub_check(unsigned int eip);
++void bx_gdbstub_exception(unsigned int nr);
+ #define GDBSTUB_STOP_NO_REASON   (0xac0)
+ 
+ #if BX_SUPPORT_SMP
+diff -urp orig/bochs-2.5.1//cpu/exception.cc bochs-2.5.1/cpu/exception.cc
+--- orig/bochs-2.5.1//cpu/exception.cc	2012-01-14 03:31:12.410166484 -0500
++++ bochs-2.5.1/cpu/exception.cc	2012-01-14 04:06:11.325970378 -0500
+@@ -930,6 +930,9 @@ void BX_CPU_C::exception(unsigned vector
+   BX_CPU_THIS_PTR curr_exception = exception_type;
+   BX_CPU_THIS_PTR errorno++;
+ 
++#if BX_GDBSTUB
++  bx_gdbstub_exception(vector);
++#endif
+   if (real_mode()) {
+     push_error = 0; // not INT, no error code pushed
+     error_code = 0;
+diff -urp orig/bochs-2.5.1//gdbstub.cc bochs-2.5.1/gdbstub.cc
+--- orig/bochs-2.5.1//gdbstub.cc	2012-01-14 03:31:12.450166199 -0500
++++ bochs-2.5.1/gdbstub.cc	2012-01-14 04:09:52.680262449 -0500
+@@ -50,6 +50,7 @@ static int last_stop_reason = GDBSTUB_ST
+ #define GDBSTUB_EXECUTION_BREAKPOINT    (0xac1)
+ #define GDBSTUB_TRACE                   (0xac2)
+ #define GDBSTUB_USER_BREAK              (0xac3)
++#define GDBSTUB_EXCEPTION_0E		(0xac4)
+ 
+ static bx_list_c *gdbstub_list;
+ static int listen_socket_fd;
+@@ -318,6 +319,12 @@ int bx_gdbstub_check(unsigned int eip)
+   return GDBSTUB_STOP_NO_REASON;
+ }
+ 
++void bx_gdbstub_exception(unsigned int nr)
++{
++    if (nr == 0x0e)
++        last_stop_reason = GDBSTUB_EXCEPTION_0E;
++}
++
+ static int remove_breakpoint(unsigned addr, int len)
+ {
+   if (len != 1)
+@@ -488,6 +495,10 @@ static void debug_loop(void)
+         {
+           write_signal(&buf[1], SIGTRAP);
+         }
++        else if (last_stop_reason == GDBSTUB_EXCEPTION_0E)
++        {
++          write_signal(&buf[1], SIGSEGV);
++        }
+         else
+         {
+           write_signal(&buf[1], 0);

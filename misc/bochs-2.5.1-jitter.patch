@@ -1,0 +1,61 @@
+diff -urp orig/bochs-2.5.1//bochs.h bochs-2.5.1/bochs.h
+--- orig/bochs-2.5.1//bochs.h	2012-01-14 03:31:12.454166169 -0500
++++ bochs-2.5.1/bochs.h	2012-01-14 03:34:55.428484343 -0500
+@@ -568,4 +568,6 @@ BX_CPP_INLINE Bit64u bx_bswap64(Bit64u v
+ #define CopyHostQWordLittleEndian(hostAddrDst,  hostAddrSrc) \
+     (* (Bit64u *)(hostAddrDst)) = (* (Bit64u *)(hostAddrSrc));
+ 
++extern int jitter;
++
+ #endif  /* BX_BOCHS_H */
+diff -urp orig/bochs-2.5.1//iodev/pit82c54.cc bochs-2.5.1/iodev/pit82c54.cc
+--- orig/bochs-2.5.1//iodev/pit82c54.cc	2012-01-14 03:31:12.422166415 -0500
++++ bochs-2.5.1/iodev/pit82c54.cc	2012-01-14 03:39:41.562300200 -0500
+@@ -49,6 +49,7 @@
+ 
+ #include "iodev.h"
+ #include "pit82c54.h"
++#include <stdlib.h>
+ #define LOG_THIS this->
+ 
+ 
+@@ -413,7 +414,13 @@ void BX_CPP_AttrRegparmN(1) pit_82C54::c
+       case 2:
+         if (thisctr.count_written) {
+           if (thisctr.triggerGATE || thisctr.first_pass) {
+-            set_count(thisctr, thisctr.inlatch);
++            unsigned n = thisctr.inlatch;
++            if (jitter && n > 5) {
++              n *= (double) rand() / RAND_MAX;
++              if (n < 5)
++                n = 5;
++            }
++            set_count(thisctr, n);
+             thisctr.next_change_time=(thisctr.count_binary-1) & 0xFFFF;
+             thisctr.null_count=0;
+             if (thisctr.inlatch==1) {
+diff -urp orig/bochs-2.5.1//main.cc bochs-2.5.1/main.cc
+--- orig/bochs-2.5.1//main.cc	2012-01-14 03:31:12.438166289 -0500
++++ bochs-2.5.1/main.cc	2012-01-14 03:37:13.415443728 -0500
+@@ -101,6 +101,7 @@ BOCHSAPI BX_CPU_C bx_cpu;
+ BOCHSAPI BX_MEM_C bx_mem;
+ 
+ char *bochsrc_filename = NULL;
++int jitter = 0;
+ 
+ void bx_print_header()
+ {
+@@ -565,6 +566,13 @@ int bx_init_main(int argc, char *argv[])
+     else if (!strcmp("-q", argv[arg])) {
+       SIM->get_param_enum(BXPN_BOCHS_START)->set(BX_QUICK_START);
+     }
++    else if (!strcmp("-j", argv[arg])) {
++      if (++arg >= argc) BX_PANIC(("-j must be followed by a number"));
++      else {
++        jitter = 1;
++        srand (atoi (argv[arg]));
++      }
++    }
+     else if (!strcmp("-log", argv[arg])) {
+       if (++arg >= argc) BX_PANIC(("-log must be followed by a filename"));
+       else SIM->get_param_string(BXPN_LOG_FILENAME)->set(argv[arg]);
