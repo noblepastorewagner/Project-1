@@ -374,8 +374,9 @@ thread_set_nice (int nice UNUSED)
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  thread* t = current_thread();
+
+  return t->nice;
 }
 
 /* Returns 100 times the system load average. */
@@ -385,12 +386,13 @@ thread_get_load_avg (void)
   /* Not yet implemented. */
   return 0;
 }
-
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
+  /*Not yet implemented */
+  thread* t = current_thread();
+
   return 0;
 }
 
@@ -482,6 +484,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->ticks_left = -1;
   sema_init(&(t -> thread_sem), 0);
   list_push_back (&all_list, &t->allelem);
+
+  t->nice = 0;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

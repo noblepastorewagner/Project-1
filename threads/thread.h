@@ -97,6 +97,7 @@ struct thread
     int ticks_left;
     struct semaphore thread_sem;
 
+	int nice;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
