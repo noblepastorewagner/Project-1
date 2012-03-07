@@ -101,7 +101,13 @@ thread_init (void)
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
-   Also creates the idle thread. */
+   Al{
+  if(thread -> ticks_left != -1)
+    thread -> ticks_left--;
+  if(thread -> ticks_left == 0)
+    sema_up(&(thread -> thread_sem));
+}
+so creates the idle thread. */
 void
 thread_start (void) 
 {
@@ -124,6 +130,13 @@ void thread_action_function(struct thread *thread, void *aux)
   if(thread -> ticks_left == 0)
     sema_up(&(thread -> thread_sem));
 }
+
+void check_priority(struct thread *thread, void *aux)
+{
+	if(thread -> priority > *((int *)aux))
+		*((int *)aux) = thread -> priority;
+
+} 
 
 /* Called by the timer interrupt handler at each timer tick.
    Thus, this function runs in an external interrupt context. */
@@ -218,6 +231,10 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
+
+  struct thread * current = thread_current();
+  if(t -> priority > current -> priority)
+    thread_yield();
 
   return tid;
 }
@@ -353,7 +370,17 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  enum intr_level old_level;
+  old_level = intr_disable();
   thread_current ()->priority = new_priority;
+
+  int highest_priority = PRI_MIN;
+  thread_foreach(check_priority, (void *) &highest_priority);
+
+  if(highest_priority > new_priority)
+    thread_yield();
+
+  intr_set_level(old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -365,7 +392,7 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) 
+thread_set_nice (int nice) 
 {
   /* Not yet implemented. */
 }
@@ -374,7 +401,7 @@ thread_set_nice (int nice UNUSED)
 int
 thread_get_nice (void) 
 {
-  thread* t = current_thread();
+  struct thread* t = thread_current();
 
   return t->nice;
 }
@@ -391,7 +418,7 @@ int
 thread_get_recent_cpu (void) 
 {
   /*Not yet implemented */
-  thread* t = current_thread();
+  struct thread* t = thread_current();
 
   return 0;
 }

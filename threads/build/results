@@ -4,7 +4,7 @@ pass tests/threads/alarm-simultaneous
 FAIL tests/threads/alarm-priority
 pass tests/threads/alarm-zero
 pass tests/threads/alarm-negative
-FAIL tests/threads/priority-change
+pass tests/threads/priority-change
 FAIL tests/threads/priority-donate-one
 FAIL tests/threads/priority-donate-multiple
 FAIL tests/threads/priority-donate-multiple2

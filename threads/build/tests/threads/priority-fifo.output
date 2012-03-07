@@ -2,7 +2,7 @@ squish-pty bochs -q
 ========================================================================
                        Bochs x86 Emulator 2.5.1
               Built from SVN snapshot on January 6, 2012
-                  Compiled on Jan 31 2012 at 09:58:41
+                  Compiled on Jan 31 2012 at 10:11:43
 ========================================================================
 PiLo hda4
 Loading...........
@@ -22,18 +22,18 @@ Executing 'priority-fifo':
 (priority-fifo) iteration: 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
 (priority-fifo) iteration: 8 9 0 1 2 3 4 5 6 7 8 9 10 0 1 2
 (priority-fifo) iteration: 3 4 5 6 7 8 9 10 11 12 0 1 2 3 4 5
-(priority-fifo) iteration: 6 7 8 9 10 11 12 13 14 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 1 2 3 4 5 6 7
-(priority-fifo) iteration: 8 9 10 11 12 13 14 15 3 4 5 6 7 8 9 10
-(priority-fifo) iteration: 11 12 13 14 15 5 6 7 8 9 10 11 12 13 14 15
-(priority-fifo) iteration: 7 8 9 10 11 12 13 14 15 8 9 10 11 12 13 14
-(priority-fifo) iteration: 15 10 11 12 13 14 15 11 12 13 14 15 13 14 15 15
+(priority-fifo) iteration: 6 7 8 9 10 11 12 13 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 1 2 3 4 5 6 7 8
+(priority-fifo) iteration: 9 10 11 12 13 14 15 3 4 5 6 7 8 9 10 11
+(priority-fifo) iteration: 12 13 14 15 5 6 7 8 9 10 11 12 13 14 15 7
+(priority-fifo) iteration: 8 9 10 11 12 13 14 15 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 10 11 12 13 14 15 11 12 13 14 15 13 14 15 14 15
 (priority-fifo) end
 Execution of 'priority-fifo' complete.
 Timer: 300 ticks
