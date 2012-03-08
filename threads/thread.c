@@ -244,6 +244,8 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  thread_yield();
+
   return tid;
 }
 
@@ -521,8 +523,6 @@ init_thread (struct thread *t, const char *name, int priority)
   sema_init(&(t -> thread_sem), 0);
   list_push_back (&all_list, &t->allelem);
   t->nice = 0;
-  
-  thread_yield();
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -552,9 +552,9 @@ next_thread_to_run (void)
   }
   else
   {
-    struct list_entry *max = list_max (&ready_list, compare_threads, NULL);
+    struct list_elem *max = list_max (&ready_list, compare_threads, NULL);
     list_remove(max);
-    return max;
+    return list_entry(max, struct thread, elem);
   }
 }
 
