@@ -1,8 +1,0 @@
-FAIL
-Kernel panic in run: PANIC at ../../threads/synch.c:245 in lock_release(): assertion `lock_held_by_current_thread (lock)' failed.
-Call stack: 0xc002cf5c 0xc0022c39 0xc0030106 0xc00213e1
-Translation of call stack:
-0xc002cf5c: debug_panic (.../../lib/kernel/debug.c:37)
-0xc0022c39: lock_release (...../../threads/synch.c:247)
-0xc0030106: acquire_thread_func (...riority-donate-lower.c:50)
-0xc00213e1: kernel_thread (..../../threads/thread.c:472)
