@@ -71,6 +71,18 @@ static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+bool 
+compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux)
+{
+  struct thread *first = list_entry(a, struct thread, elem);
+  struct thread *second = list_entry(b, struct thread, elem);
+
+  if(first -> priority < second -> priority)
+    return true;
+
+  return false;
+}
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -232,10 +244,6 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  struct thread * current = thread_current();
-  if(t -> priority > current -> priority)
-    thread_yield();
-
   return tid;
 }
 
@@ -272,7 +280,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  list_push_front (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -343,7 +351,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_push_front (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -405,6 +413,7 @@ thread_get_nice (void)
 
   return t->nice;
 }
+d_to_run ();
 
 /* Returns 100 times the system load average. */
 int
@@ -511,8 +520,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->ticks_left = -1;
   sema_init(&(t -> thread_sem), 0);
   list_push_back (&all_list, &t->allelem);
-
   t->nice = 0;
+  
+  thread_yield();
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -537,9 +547,15 @@ static struct thread *
 next_thread_to_run (void) 
 {
   if (list_empty (&ready_list))
+  {
     return idle_thread;
+  }
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  {
+    struct list_entry *max = list_max (&ready_list, compare_threads, NULL);
+    list_remove(max);
+    return max;
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
