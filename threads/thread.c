@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -110,6 +111,9 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  /* Initialize the load average */
+  load_avg = 0;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -172,6 +176,9 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
+  if(timer_ticks() % TIMER_FREQ == 0)
+	thread_calc_load_avg();
 }
 
 /* Prints thread statistics. */
@@ -218,6 +225,10 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+
+  /* Initialize nice value to parent's value (not done in init_thread because
+     there's not always a parent) */
+  t->nice = thread_current()->nice;
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
@@ -404,6 +415,7 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice) 
 {
+  thread_current()->nice = nice;
   /* Not yet implemented. */
 }
 
@@ -421,10 +433,19 @@ d_to_run ();
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  int tmp = 100 * load_avg;
+
+  return (tmp + (1 << FBITS) / 2) / (1 << FBITS);
 }
 /* Returns 100 times the current thread's recent_cpu value. */
+
+/* Recalculate the load average */
+void
+thread_calc_load_avg (void)
+{
+  load_avg = load_avg * 59 / 60 + (1 << FBITS) / 60 * (list_size(&ready_list) + 1);
+}
+
 int
 thread_get_recent_cpu (void) 
 {

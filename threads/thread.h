@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <threads/synch.h>
 
+#define FBITS 14
+int32_t load_avg; /* Systemwide load average. 17.15 fixed-point real */
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -143,6 +146,7 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+void thread_calc_load_avg (void);  /* Run once every second to update */
 
 bool compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux);
 
