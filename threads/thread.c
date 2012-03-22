@@ -77,7 +77,7 @@ compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux)
   struct thread *first = list_entry(a, struct thread, elem);
   struct thread *second = list_entry(b, struct thread, elem);
 
-  if(first -> priority < second -> priority)
+  if(first -> priority <= second -> priority)
     return true;
 
   return false;
