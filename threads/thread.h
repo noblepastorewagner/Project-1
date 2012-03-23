@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include <threads/synch.h>
 
-#define FBITS 14
-int32_t load_avg; /* Systemwide load average. 17.15 fixed-point real */
+int32_t load_avg; /* Systemwide load average. 17.14 fixed-point real */
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -100,7 +99,7 @@ struct thread
     struct semaphore thread_sem;
 
     int nice;
-    int recent_cpu;
+    int32_t recent_cpu;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

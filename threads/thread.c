@@ -113,18 +113,15 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  /* Initialize the load average */
+  /* Initialize the systemwide load average */
   load_avg = 0;
+
+  if (thread_mlfqs)
+    thread_calc_priority(initial_thread, NULL);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
-   Al{
-  if(thread -> ticks_left != -1)
-    thread -> ticks_left--;
-  if(thread -> ticks_left == 0)
-    sema_up(&(thread -> thread_sem));
-}
-so creates the idle thread. */
+   Also creates the idle thread. */
 void
 thread_start (void) 
 {
@@ -244,10 +241,11 @@ thread_create (const char *name, int priority,
 
   /* Initialize nice value and recent cpu to parent's value (not done in init_thread because
      there's not always a parent) */
-  t->nice = thread_current()->nice;
-  t->recent_cpu = thread_current()->recent_cpu;
-  if(thread_mlfqs)
+  if(thread_mlfqs) {
+    t->nice = thread_current()->nice;
+    t->recent_cpu = thread_current()->recent_cpu;
     thread_calc_priority(t, NULL);
+  }
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
@@ -312,7 +310,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_front (&ready_list, &t->elem);
+  if (t != idle_thread)
+    list_push_front (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -384,10 +383,10 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread)
   {
-    if(!thread_mlfqs || 1==1)
+//    if(!thread_mlfqs || 1==1)
    	 list_push_front (&ready_list, &cur->elem);
-    else
-        list_push_back(&ready_list, &cur->elem);
+//    else
+//        list_push_back(&ready_list, &cur->elem);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -442,8 +441,10 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice) 
 {
-  thread_current()->nice = nice;
-  thread_calc_priority(thread_current(), NULL);
+  struct thread* t = thread_current();
+  
+  t->nice = nice;
+  thread_calc_priority(t, NULL);
   thread_yield();
 }
 
@@ -460,9 +461,9 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  int tmp = 100 * load_avg;
+  int64_t tmp = 100 * load_avg;
 
-  return (tmp + (1 << FBITS) / 2) / (1 << FBITS);
+  return FP_TO_INT_ROUND(tmp);
 }
 /* Returns 100 times the current thread's recent_cpu value. */
 
@@ -482,7 +483,7 @@ thread_calc_load_avg (void)
 void
 thread_calc_recent_cpu (struct thread *t, void *aux)
 {
-  int new_load = load_avg * 2;
+  int32_t new_load = load_avg * 2;
   t -> recent_cpu = FP_ADD_INT(FP_MULTIPLY(FP_DIVIDE(new_load, FP_ADD_INT(new_load, 1)), t-> recent_cpu), t -> nice);
 }
 
@@ -515,14 +516,7 @@ thread_get_recent_cpu (void)
 
   int tmp = 100 * t -> recent_cpu;
 
-  if(tmp <= 0)
-  {
-    return (tmp - (1 << FBITS) / 2) / (1 << FBITS);
-  }
-  else
-  {
-     return (tmp + (1 << FBITS) / 2) / (1 << FBITS);
-  }
+  return FP_TO_INT_ROUND(tmp);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -573,7 +567,7 @@ kernel_thread (thread_func *function, void *aux)
   function (aux);       /* Execute the thread function. */
   thread_exit ();       /* If function() returns, kill the thread. */
 }
-
+
 /* Returns the running thread. */
 struct thread *
 running_thread (void) 
@@ -608,7 +602,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+  //if (!thread_mlfqs)
+      t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->ticks_left = -1;
   sema_init(&(t -> thread_sem), 0);
