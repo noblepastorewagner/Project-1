@@ -27,7 +27,6 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
-
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -100,7 +99,8 @@ struct thread
     int ticks_left;
     struct semaphore thread_sem;
 
-	int nice;
+    int nice;
+    int recent_cpu;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -147,7 +147,8 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 void thread_calc_load_avg (void);  /* Run once every second to update */
-
+void thread_calc_recent_cpu(struct thread * t, void *aux);
+void thread_calc_priority(struct thread * t, void *aux);
 bool compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 
