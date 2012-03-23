@@ -180,14 +180,14 @@ thread_tick (void)
 
   if(thread_mlfqs)
   {
+    if(thread_current() != idle_thread)
+      thread_current() -> recent_cpu = FP_ADD_INT(thread_current() -> recent_cpu, 1);
+
     if(timer_ticks() % TIMER_FREQ == 0)
     {
 	thread_calc_load_avg();
         thread_foreach(thread_calc_recent_cpu, NULL);
     }
-
-    if(thread_current() != idle_thread)
-      FP_ADD_INT(thread_current() -> recent_cpu, 1);
 
     if(timer_ticks() % 4 == 0)
     {
