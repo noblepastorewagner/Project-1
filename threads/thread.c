@@ -113,7 +113,6 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  /* Initialize the load average */
   load_avg = 0;
 }
 
@@ -462,7 +461,7 @@ thread_get_load_avg (void)
 {
   int tmp = 100 * load_avg;
 
-  return (tmp + (1 << FBITS) / 2) / (1 << FBITS);
+  return FP_TO_INT_ROUND(tmp);
 }
 /* Returns 100 times the current thread's recent_cpu value. */
 
@@ -515,14 +514,7 @@ thread_get_recent_cpu (void)
 
   int tmp = 100 * t -> recent_cpu;
 
-  if(tmp <= 0)
-  {
-    return (tmp - (1 << FBITS) / 2) / (1 << FBITS);
-  }
-  else
-  {
-     return (tmp + (1 << FBITS) / 2) / (1 << FBITS);
-  }
+  return FP_TO_INT_ROUND(tmp);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

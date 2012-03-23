@@ -5,9 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include <threads/synch.h>
-
-#define FBITS 14
-int32_t load_avg; /* Systemwide load average. 17.15 fixed-point real */
+int32_t load_avg; /* Systemwide load average. 17.14 fixed-point real */
 
 /* States in a thread's life cycle. */
 enum thread_status
