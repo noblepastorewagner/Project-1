@@ -490,7 +490,7 @@ thread_calc_recent_cpu (struct thread *t, void *aux)
 void
 thread_calc_priority (struct thread *t, void *aux)
 {
-  t -> priority = FP_TO_INT_FLOOR(INT_TO_FP(PRI_MAX) - FP_SUB_INT((t -> recent_cpu / 4), (t -> nice * 2)));
+  t -> priority = PRI_MAX - FP_TO_INT_NEAR(t -> recent_cpu / 4) - (t -> nice * 2);
  
   if(t -> priority > PRI_MAX)
   {
@@ -511,7 +511,6 @@ thread_calc_priority (struct thread *t, void *aux)
 int
 thread_get_recent_cpu (void) 
 {
-  /*Not yet implemented */
   struct thread* t = thread_current();
 
   int tmp = 100 * t -> recent_cpu;
