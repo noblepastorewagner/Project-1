@@ -176,7 +176,8 @@ thread_tick (void)
     intr_yield_on_return ();
 
   thread_foreach(thread_action_function, NULL);  
- 
+  
+  /* mlfqs accounting */
   if(thread_mlfqs)
   {
     if(thread_current() != idle_thread)
@@ -383,10 +384,7 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread)
   {
-//    if(!thread_mlfqs || 1==1)
-   	 list_push_front (&ready_list, &cur->elem);
-//    else
-//        list_push_back(&ready_list, &cur->elem);
+    list_push_front (&ready_list, &cur->elem);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -418,12 +416,13 @@ thread_set_priority (int new_priority)
   {
     enum intr_level old_level;
     old_level = intr_disable();
-//    msg("Current priority: %d Original Priority: %d", thread_current()->priority, thread_current()->original_priority);
+
     thread_current()->priority = new_priority;
     thread_current()->original_priority = new_priority;
 
     int highest_priority = 0;
     struct list_elem *e;
+    /*Loop through current thread's lock list to find highest waiting thread's priority */
     for(e = list_begin(&(thread_current() -> lock_list)); e != list_end(&(thread_current() -> lock_list)); e = list_next(e))
     {
       struct lock *tmp = list_entry(e, struct lock, elem);
@@ -432,7 +431,6 @@ thread_set_priority (int new_priority)
         highest_priority = tmp -> highest_priority;
       }
     }
-    //msg("Highest Priority Found In List: %d", highest_priority);
     if(highest_priority > thread_current() -> priority)
     {
       thread_current() -> priority = highest_priority;
@@ -513,17 +511,11 @@ thread_calc_priority (struct thread *t, void *aux)
  
   if(t -> priority > PRI_MAX)
   {
-    //msg("Priority too high: Priority: %d Recent CPU: %d", t -> priority, t -> recent_cpu);
     t -> priority = PRI_MAX;
   }
   else if(t -> priority < PRI_MIN)
   {
-    //msg("Priority too low: Priority: %d Recent CPU: %d", t -> priority, t -> recent_cpu);
     t -> priority = PRI_MIN;
-  }
-  else
-  {
-    //msg("Priority is okay: Priority: %d Recent CPU: %d", t-> priority, t-> recent_cpu);
   }
 }
 
@@ -537,12 +529,17 @@ thread_get_recent_cpu (void)
   return FP_TO_INT_ROUND(tmp);
 }
 
-void thread_donate_priority(struct thread *donater, struct thread *donatee)
+void thread_donate_priority(struct thread *donater, struct thread *donatee, struct lock *lock)
 {
-  donatee -> priority = donater -> priority;
-  if(donatee -> current_lock != NULL && donatee -> current_lock -> holder -> priority < donatee -> priority)
-  {
-    thread_donate_priority(donatee, donatee->current_lock->holder);
+  if(lock -> highest_priority < donater -> priority)
+  { 
+    lock -> highest_priority = donater -> priority;
+
+    if(donatee -> priority < donater -> priority)
+      donatee -> priority = donater -> priority;
+ 
+    if(donatee -> current_lock != NULL)
+      thread_donate_priority(donatee, donatee->current_lock->holder, donatee -> current_lock);
   }
 }
 

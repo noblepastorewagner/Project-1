@@ -153,6 +153,6 @@ void thread_calc_load_avg (void);  /* Run once every second to update */
 void thread_calc_recent_cpu(struct thread * t, void *aux);
 void thread_calc_priority(struct thread * t, void *aux);
 bool compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux);
-void thread_donate_priority(struct thread *donater, struct thread *donatee); 
+void thread_donate_priority(struct thread *donater, struct thread *donatee, struct lock *lock); 
 
 #endif /* threads/thread.h */
