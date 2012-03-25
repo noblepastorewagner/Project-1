@@ -52,7 +52,7 @@ test_mlfqs_load_1 (void)
   if (load_avg < 0)
     fail ("load average fell below 0");
   if (load_avg > 50)
-    fail ("load average stayed above 0.5 for more than 10 seconds");
+    fail ("load average stayed above 0.5 for more than 10 seconds %d", load_avg);
   msg ("load average fell back below 0.5 (to %d.%02d)",
        load_avg / 100, load_avg % 100);
 

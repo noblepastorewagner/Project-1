@@ -223,6 +223,24 @@ lock_acquire (struct lock *lock)
       ASSERT(lock->highest_priority > 0);
     }
     sema_down(&lock->semaphore);
+//    old_level = intr_disable();
+    /* set lock priority to that of its highest waiter */
+    struct list_elem *e;
+    int highest_priority = 0;
+    for(e = list_begin(&lock->semaphore.waiters); e != list_end(&lock->semaphore.waiters); e = list_next(e))
+    {
+      struct thread *tmp = list_entry(e, struct thread, elem);
+      if(tmp -> priority > highest_priority)
+      {
+        highest_priority = tmp -> priority;
+      }
+    }
+    lock -> highest_priority = highest_priority;
+    ASSERT(lock -> highest_priority >= 0);
+
+    list_push_back(&(thread_current()->lock_list), &lock->elem);
+    struct list_elem *tmp = list_pop_back(&thread_current()->lock_list);
+    //ASSERT(list_entry(tmp, struct lock, elem) -> holder -> tid > 0);
     list_push_back(&(thread_current()->lock_list), &lock->elem);
     lock->holder = thread_current();
   }
@@ -272,39 +290,27 @@ lock_release (struct lock *lock)
 
   if(!thread_mlfqs)
   {
-    /* set lock priority to that of its highest waiter */
+    //enum intr_level old_level = intr_disable();
     struct list_elem *e;
-    int highest_priority = 0;
-    for(e = list_begin(&lock->semaphore.waiters); e != list_end(&lock->semaphore.waiters); e = list_next(e))
-    {
-      struct thread *tmp = list_entry(e, struct thread, elem);
-      if(tmp -> priority > highest_priority)
-      {
-        highest_priority = tmp -> priority;
-      }
-    }
-    lock -> highest_priority = highest_priority;
-    ASSERT(lock -> highest_priority >= 0);
+
     /* Remove the lock being released from the current thread's lock list */
     ASSERT(!list_empty(&thread_current()->lock_list));
     list_remove(&lock->elem);
 
     /* Get highest priority from the locks the current thread still holds */
-    highest_priority = 0;
+    int highest_priority = 0;
     //msg("Current Size of lock list for thread %s: %d\n\n", thread_current() -> name, list_size(&(thread_current() -> lock_list)));
     if(!list_empty(&thread_current()->lock_list))
     {
-    for(e = list_begin(&thread_current() -> lock_list); e != list_end(&thread_current() -> lock_list); e = list_next(e));
-    {
-      ASSERT(!list_empty(&thread_current()->lock_list));
-      struct lock *tmp = list_entry(e, struct lock, elem);
-      //msg("Lock has priority %d", tmp -> highest_priority);
-      ASSERT(tmp -> holder -> tid > 0);
-      if(tmp -> highest_priority > highest_priority)
+      for(e = list_begin(&(thread_current() -> lock_list)); e != list_end(&(thread_current() -> lock_list)); e = list_next(e))
       {
-        highest_priority = tmp -> highest_priority;
+        struct lock *tmp = list_entry(e, struct lock, elem);
+        if(tmp -> highest_priority > highest_priority)
+        {
+          highest_priority = tmp -> highest_priority;
+        }
       }
-    }
+
     }
     //msg("Highest found priority %d", highest_priority); 
     if(lock -> holder -> original_priority >= highest_priority)
@@ -316,6 +322,7 @@ lock_release (struct lock *lock)
     {
       lock -> holder -> priority = highest_priority;
     }
+    //intr_set_level(old_level);
   }
 
   lock->holder = NULL;

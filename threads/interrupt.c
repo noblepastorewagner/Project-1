@@ -385,8 +385,10 @@ intr_handler (struct intr_frame *frame)
     {
       /* No handler and not spurious.  Invoke the unexpected
          interrupt handler. */
+      char tmp[25];
+      snprintf(tmp, 25, "Unexpected interrupt %d", frame->vec_no);
       intr_dump_frame (frame);
-      PANIC ("Unexpected interrupt"); 
+      PANIC (tmp); 
     }
 
   /* Complete the processing of an external interrupt. */
