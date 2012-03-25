@@ -95,11 +95,15 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     /** Additions */
+    struct list lock_list;
     int ticks_left;
     struct semaphore thread_sem;
 
+    struct lock *current_lock;
+
     int nice;
     int32_t recent_cpu;
+    int original_priority;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -149,6 +153,6 @@ void thread_calc_load_avg (void);  /* Run once every second to update */
 void thread_calc_recent_cpu(struct thread * t, void *aux);
 void thread_calc_priority(struct thread * t, void *aux);
 bool compare_threads(const struct list_elem *a, const struct list_elem *b, void *aux);
-
+void thread_donate_priority(struct thread *donater, struct thread *donatee); 
 
 #endif /* threads/thread.h */

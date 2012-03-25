@@ -143,6 +143,7 @@ void thread_action_function(struct thread *thread, void *aux)
     thread -> ticks_left--;
   if(thread -> ticks_left == 0)
     sema_up(&(thread -> thread_sem));
+  
 }
 
 void check_priority(struct thread *thread, void *aux)
@@ -169,21 +170,21 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  thread_foreach(thread_action_function, NULL);
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
+  thread_foreach(thread_action_function, NULL);  
+ 
   if(thread_mlfqs)
   {
     if(thread_current() != idle_thread)
       thread_current() -> recent_cpu = FP_ADD_INT(thread_current() -> recent_cpu, 1);
-
     if(timer_ticks() % TIMER_FREQ == 0)
     {
-	thread_calc_load_avg();
-        thread_foreach(thread_calc_recent_cpu, NULL);
+      thread_calc_load_avg();
+      thread_foreach(thread_calc_recent_cpu, NULL);
     }
 
     if(timer_ticks() % 4 == 0)
@@ -191,7 +192,6 @@ thread_tick (void)
       thread_foreach(thread_calc_priority, NULL);
     }
   }
-
 }
 
 /* Prints thread statistics. */
@@ -418,12 +418,31 @@ thread_set_priority (int new_priority)
   {
     enum intr_level old_level;
     old_level = intr_disable();
-    thread_current ()->priority = new_priority;
+//    msg("Current priority: %d Original Priority: %d", thread_current()->priority, thread_current()->original_priority);
+    thread_current()->priority = new_priority;
+    thread_current()->original_priority = new_priority;
 
-    int highest_priority = PRI_MIN;
+    int highest_priority = 0;
+    struct list_elem *e;
+    for(e = list_begin(&(thread_current() -> lock_list)); e != list_end(&(thread_current() -> lock_list)); e = list_next(e))
+    {
+      struct lock *tmp = list_entry(e, struct lock, elem);
+      if(tmp -> highest_priority > highest_priority)
+      {
+        highest_priority = tmp -> highest_priority;
+      }
+    }
+    //msg("Highest Priority Found In List: %d", highest_priority);
+    if(highest_priority > thread_current() -> priority)
+    {
+      thread_current() -> priority = highest_priority;
+    }
+
+    /** Reuse highest priority variable */
+    highest_priority = PRI_MIN;
     thread_foreach(check_priority, (void *) &highest_priority);
 
-    if(highest_priority > new_priority)
+    if(highest_priority > thread_current()->priority)
       thread_yield();
 
     intr_set_level(old_level);
@@ -490,7 +509,7 @@ thread_calc_recent_cpu (struct thread *t, void *aux)
 void
 thread_calc_priority (struct thread *t, void *aux)
 {
-  t -> priority = PRI_MAX - FP_TO_INT_NEAR(t -> recent_cpu / 4) - (t -> nice * 2);
+  t -> priority = PRI_MAX - FP_TO_INT_ROUND(t -> recent_cpu / 4) - (t -> nice * 2);
  
   if(t -> priority > PRI_MAX)
   {
@@ -516,6 +535,15 @@ thread_get_recent_cpu (void)
   int tmp = 100 * t -> recent_cpu;
 
   return FP_TO_INT_ROUND(tmp);
+}
+
+void thread_donate_priority(struct thread *donater, struct thread *donatee)
+{
+  donatee -> priority = donater -> priority;
+  if(donatee -> current_lock != NULL && donatee -> current_lock -> holder -> priority < donatee -> priority)
+  {
+    thread_donate_priority(donatee, donatee->current_lock->holder);
+  }
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -601,14 +629,16 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  //if (!thread_mlfqs)
-      t->priority = priority;
+  t->priority = priority;
+  t->original_priority = priority;
   t->magic = THREAD_MAGIC;
   t->ticks_left = -1;
+  list_init(&t->lock_list);
   sema_init(&(t -> thread_sem), 0);
   list_push_back (&all_list, &t->allelem);
   t->nice = 0;
   t->recent_cpu = 0;
+  t->current_lock = NULL;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
