@@ -92,11 +92,11 @@ timer_sleep (int64_t ticks)
 {
   int64_t start = timer_ticks ();
   struct thread * current = thread_current();
-  if(ticks > 0)
+  if(ticks > 0) /*checks if thread should be put to sleep*/
   {
     current -> ticks_left = ticks;
 
-    sema_down(&(current -> thread_sem));
+    sema_down(&(current -> thread_sem)); /*put thread to sleep*/
   }
   ASSERT (intr_get_level () == INTR_ON);
 }
