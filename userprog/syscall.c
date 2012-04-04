@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -13,28 +14,60 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f) 
 {
   printf ("system call!\n");
-  thread_exit ();
+  /* Read the system call number off of caller's stack */
+  int call_number;
+  bool success = get_int_32(&call_number, f->esp);
+  /* Terminate if invalid address */
+  if (!success) {
+      thread_exit();
+  }
+  switch (call_number) {
+      case SYS_WRITE:
+      case SYS_EXIT:
+          sys_exit(f);
+          break;
+      default:
+          thread_exit();
+  }
+}
+
+static void
+sys_exit(struct intr_frame *f)
+{
+    int result;
+    bool success = get_int_32(&result, f->esp + 1);
+    /* Terminate immediately if address is invalid. */
+    if (!success) {
+        thread_exit();
+    }
+
+    printf("%s: exit(%d)\n", thread_name(), result);
+    thread_exit();
 }
 
 /* Reads a 32-bit int at user virtual address UADDR.
- * UADDR need not be valid. This function returns false if not (and terminates
- * the user program? TODO). */
+ * UADDR need not be valid. This function returns false if not (and the user
+ * program should be terminated by the caller). It returns true on success. */
 static bool
 get_int_32 (const uint32_t *result, const uint32_t *uaddr)
 {
+    /* Make sure pointer isn't in kernel address space */
+    if (uaddr < PHYS_BASE) {
+        return false;
+    }
+
+    /* Get the value, byte by byte */
     uint8_t uaddr_8;
     *result = 0;
     for (int i = 0; i < 4; ++i) {
-        uaddr_8 = get_user((uint8_t) uaddr);
+        uaddr_8 = get_user((uint8_t) uaddr + i);
         if (uaddr_8 == -1) {
-            /* TODO kill the user program? Do it in page_fault()?
-             * Or in system call handler? */
             return false;
         }
-        result += uaddr_8 << (i << 3);
+        result += (uint32_t) uaddr_8 << (i << 3);
     }
     return true;
 }

@@ -165,7 +165,11 @@ page_fault (struct intr_frame *f)
      * need to clean up, and the system call can kill the offending process. */
     /* The Pintos docs say to set eax and eip on page 27 (and 26). Does it mean
      * the actual registers, or the members of f (a struct intr_frame *)? */
-    asm("movl %eax, %eip; movl $0xffffff, %eax");
+    //asm("movl %eax, %eip; movl $0xffffffff, %eax");
+    //TODO Are we accessing f->eip correctly?
+    //It is a pointer, right? Is it a function?!?
+    *f->eip = f->eax;
+    f->eax = 0xffffffff;
   }
 }
 
