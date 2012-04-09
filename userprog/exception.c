@@ -148,14 +148,28 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  /* To implement virtual memory, delete the rest of the function
-     body, and replace it with code that brings in the page to
-     which fault_addr refers. */
-  printf ("Page fault at %p: %s error %s page in %s context.\n",
-          fault_addr,
-          not_present ? "not present" : "rights violation",
-          write ? "writing" : "reading",
-          user ? "user" : "kernel");
-  kill (f);
+  if (user) {
+    /* To implement virtual memory, delete the rest of the function
+       body, and replace it with code that brings in the page to
+       which fault_addr refers. */
+    printf ("Page fault at %p: %s error %s page in %s context.\n",
+            fault_addr,
+            not_present ? "not present" : "rights violation",
+            write ? "writing" : "reading",
+            user ? "user" : "kernel");
+    kill (f);
+  } else {
+    /* If the kernel has a page fault, it's *hopefully* because it was passed
+     * a bad pointer through a system call. So flag it in the registers so the
+     * function accessing user memory knows, but don't terminate it. We might
+     * need to clean up, and the system call can kill the offending process. */
+    /* The Pintos docs say to set eax and eip on page 27 (and 26). Does it mean
+     * the actual registers, or the members of f (a struct intr_frame *)? */
+    //asm("movl %eax, %eip; movl $0xffffffff, %eax");
+    //TODO Are we accessing f->eip correctly?
+    //It is a pointer, right? Is it a function?!?
+    *f->eip = f->eax;
+    f->eax = 0xffffffff;
+  }
 }
 

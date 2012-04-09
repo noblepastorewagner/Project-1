@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -13,8 +14,85 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f) 
 {
   printf ("system call!\n");
-  thread_exit ();
+  /* Read the system call number off of caller's stack */
+  int call_number;
+  bool success = get_int_32(&call_number, f->esp);
+  /* Terminate if invalid address */
+  if (!success) {
+      thread_exit();
+  }
+  switch (call_number) {
+      case SYS_WRITE:
+      case SYS_EXIT:
+          sys_exit(f);
+          break;
+      default:
+          thread_exit();
+  }
+}
+
+static void
+sys_exit(struct intr_frame *f)
+{
+    int result;
+    bool success = get_int_32(&result, f->esp + 1);
+    /* Terminate immediately if address is invalid. */
+    if (!success) {
+        thread_exit();
+    }
+
+    printf("%s: exit(%d)\n", thread_name(), result);
+    thread_exit();
+}
+
+/* Reads a 32-bit int at user virtual address UADDR.
+ * UADDR need not be valid. This function returns false if not (and the user
+ * program should be terminated by the caller). It returns true on success. */
+static bool
+get_int_32 (const uint32_t *result, const uint32_t *uaddr)
+{
+    /* Make sure pointer isn't in kernel address space */
+    if (uaddr < PHYS_BASE) {
+        return false;
+    }
+
+    /* Get the value, byte by byte */
+    uint8_t uaddr_8;
+    *result = 0;
+    for (int i = 0; i < 4; ++i) {
+        uaddr_8 = get_user((uint8_t) uaddr + i);
+        if (uaddr_8 == -1) {
+            return false;
+        }
+        result += (uint32_t) uaddr_8 << (i << 3);
+    }
+    return true;
+}
+
+
+/* Reads a byte at user virtual address UADDR.
+ * UADDR must be below PHYS_BASE.
+ * Returns the byte value if successful, -1 if a segfault
+ * occurred. */
+static int
+get_user (const uint8_t *uaddr)
+{
+    int result;
+    asm ("movl $1f, %0; movzbl %1, %0; 1:" : "=&a" (result) : "m" (*uaddr));
+    return result;
+}
+
+/* Writes BYTE to user address UDST.
+ * UDST must be below PHYS_BASE.
+ * Returns true if successful, false if a segfault occurred. */
+static bool
+put_user (uint8_t *udst, uint8_t byte)
+{
+    int error_code;
+    asm ("movl $1f, %0; movb %b2, %1; 1:"
+            : "=&a" (error_code), "=m" (*udst) : "q" (byte));
+    return error_code != -1;
 }
