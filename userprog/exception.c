@@ -168,7 +168,7 @@ page_fault (struct intr_frame *f)
     //asm("movl %eax, %eip; movl $0xffffffff, %eax");
     //TODO Are we accessing f->eip correctly?
     //It is a pointer, right? Is it a function?!?
-    *f->eip = f->eax;
+    f->eip = f->eax;
     f->eax = 0xffffffff;
   }
 }

@@ -25,6 +25,7 @@ test_priority_donate_lower (void)
 
   lock_init (&lock);
   lock_acquire (&lock);
+  msg("Acquired initial lock");
   thread_create ("acquire", PRI_DEFAULT + 10, acquire_thread_func, &lock);
   msg ("Main thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 10, thread_get_priority ());
@@ -43,7 +44,7 @@ static void
 acquire_thread_func (void *lock_) 
 {
   struct lock *lock = lock_;
-
+  msg("attempting to acquire lock");
   lock_acquire (lock);
   msg ("acquire: got the lock");
   lock_release (lock);

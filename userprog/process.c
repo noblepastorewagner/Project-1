@@ -17,7 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "threads/synch.c"
+#include "threads/synch.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -233,45 +233,45 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Parse stack arguments and add tokens to thread stack */
-  for(token = strtok_r(file_name, " ", saveptr); token != NULL; token = strtok_r(NULL, " ", saveptr))
+  for(token = strtok_r((char *) file_name, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr))
   {
-    char strlen = strlen(token);
-    (char *) (*esp) -= strlen;
-    memcpy((char*) (*esp), token, (size_t) strlen);
+    size_t len = strlen(token);
+    *esp = (char *) (*esp) -  len;
+    memcpy((char*) (*esp), token, len);
     argv[argc++] = *esp; 
   }
 
   /** Word align stack */
-  while((char *) (*esp) % 4 != 0)
+  while((int) (*esp) % 4 != 0)
   {
-    (char *) (*esp) -= 1;
+    *esp -= 1;
   }
 
   /** Push final null argument */
-  (char *) (*esp) -= 1;
-  *((char *) (*esp)) = (char) 0;
+  *esp -= 4;
+  *((char *) (*esp)) = 0;
 
   /** Push argument pointers onto the stack in reverse order */
   int argc_tmp = argc - 1;
   while(argc_tmp >= 0)
   {
-    char strlen = strlen(argv[argc_tmp]);
-    (char *) (*esp) -= strlen;
-    memcpy((char *) (*esp), argv[argc_tmp], (size_t) strlen);
+    size_t len = strlen(argv[argc_tmp]);
+    *esp -= len;
+    memcpy((char *) (*esp), argv[argc_tmp], len);
     argc_tmp--;
   }
 
   /** Push argv base address to stack */
-  (char *) (*esp) -= 4;
+  *esp -= 4;
   memcpy((char *) (*esp), (char *) (*esp) + 4, (size_t) 4);
 
   /** Push argc to stack */
-  (char *) (*esp) -= 4;
-  (int) *((char *) (*esp)) = argc;
+  *esp -= 4;
+  *((int *) *esp) = argc;
 
   /** Push false return address to stack */
-  (char *) (*esp) -= 4;
-  (void *) *((char *) (*esp)) = (void *) 0;
+  *esp -= 4;
+  *((void **) (*esp)) = 0;
   
 
   /* Open executable file. */

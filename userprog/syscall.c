@@ -6,6 +6,9 @@
 #include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
+static int get_user (const uint8_t *uaddr);
+static bool put_user (uint8_t *udst, uint8_t byte);
+static void sys_exit(struct intr_frame *f);
 
 void
 syscall_init (void) 
@@ -18,8 +21,8 @@ syscall_handler (struct intr_frame *f)
 {
   printf ("system call!\n");
   /* Read the system call number off of caller's stack */
-  int call_number;
-  bool success = get_int_32(&call_number, f->esp);
+  uint32_t call_number;
+  bool success = get_int_32(&call_number, (uint32_t *) f->esp);
   /* Terminate if invalid address */
   if (!success) {
       thread_exit();
@@ -52,19 +55,21 @@ sys_exit(struct intr_frame *f)
 /* Reads a 32-bit int at user virtual address UADDR.
  * UADDR need not be valid. This function returns false if not (and the user
  * program should be terminated by the caller). It returns true on success. */
-static bool
-get_int_32 (const uint32_t *result, const uint32_t *uaddr)
+bool
+get_int_32 (uint32_t *result, const uint32_t *uaddr)
 {
+    int i;
+
     /* Make sure pointer isn't in kernel address space */
-    if (uaddr < PHYS_BASE) {
+    if ((void *) uaddr >= PHYS_BASE) {
         return false;
     }
 
     /* Get the value, byte by byte */
-    uint8_t uaddr_8;
+    int uaddr_8;
     *result = 0;
-    for (int i = 0; i < 4; ++i) {
-        uaddr_8 = get_user((uint8_t) uaddr + i);
+    for (i = 0; i < 4; ++i) {
+        uaddr_8 = get_user((uint8_t *) uaddr + i);
         if (uaddr_8 == -1) {
             return false;
         }
