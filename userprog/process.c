@@ -216,12 +216,57 @@ load (const char *file_name, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
+  char *argv[1024];
+  int argc = 0;
+  char *token, *saveptr;
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
+
+  /* Parse stack arguments and add tokens to thread stack */
+  for(token = strtok_r(file_name, " ", saveptr); token != NULL; token = strtok_r(NULL, " ", saveptr))
+  {
+    char strlen = strlen(token);
+    (char *) (*esp) -= strlen;
+    memcpy((char*) (*esp), token, (size_t) strlen);
+    argv[argc++] = *esp; 
+  }
+
+  /** Word align stack */
+  while((char *) (*esp) % 4 != 0)
+  {
+    (char *) (*esp) -= 1;
+  }
+
+  /** Push final null argument */
+  (char *) (*esp) -= 1;
+  *((char *) (*esp)) = (char) 0;
+
+  /** Push argument pointers onto the stack in reverse order */
+  int argc_tmp = argc - 1;
+  while(argc_tmp >= 0)
+  {
+    char strlen = strlen(argv[argc_tmp]);
+    (char *) (*esp) -= strlen;
+    memcpy((char *) (*esp), argv[argc_tmp], (size_t) strlen);
+    argc_tmp--;
+  }
+
+  /** Push argv base address to stack */
+  (char *) (*esp) -= 4;
+  memcpy((char *) (*esp), (char *) (*esp) + 4, (size_t) 4);
+
+  /** Push argc to stack */
+  (char *) (*esp) -= 4;
+  (int) *((char *) (*esp)) = argc;
+
+  /** Push false return address to stack */
+  (char *) (*esp) -= 4;
+  (void *) *((char *) (*esp)) = (void *) 0;
+  
 
   /* Open executable file. */
   file = filesys_open (file_name);
