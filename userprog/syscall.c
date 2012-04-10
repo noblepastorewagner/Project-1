@@ -38,13 +38,14 @@ static void
 sys_exit(struct intr_frame *f)
 {
     int result;
-    bool success = get_int_32(&result, f->esp + 1);
-    /* Terminate immediately if address is invalid. */
-    if (!success) {
-        thread_exit();
+    bool success = get_int_32(&result, (uint32_t *) f->esp + 1);
+
+    /* We will terminate either way, but set the exit code only if the address
+     * was valid (the default -1 will be used otherwise) */
+    if (success) {
+        thread_current()->exit_code = result;
     }
 
-    printf("%s: exit(%d)\n", thread_name(), result);
     thread_exit();
 }
 
