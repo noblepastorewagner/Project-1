@@ -44,7 +44,7 @@ sys_exit(struct intr_frame *f)
     bool success = get_int_32(&result, (uint32_t *) f->esp + 1);
 
     /* We will terminate either way, but set the exit code only if the address
-     * was valid (the default -1 will be used otherwise) */
+     * was valid (the default -1 will be used otherwise). */
     if (success) {
         thread_current()->exit_code = result;
     }
