@@ -55,6 +55,9 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+  /* Initialize exit code to -1 (the thread_exit() in this function is the only    * time it should not be printed, as specified in Pintos docs section 3.2.2 */
+  thread_current()->exit_code = -1;
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -99,6 +102,9 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+
+  /* Print termination message */
+  printf("%s: exit(%d)\n", thread_name(), cur->exit_code);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
