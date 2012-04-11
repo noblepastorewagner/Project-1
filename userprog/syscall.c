@@ -9,6 +9,7 @@ static void syscall_handler (struct intr_frame *);
 static int get_user (const uint8_t *uaddr);
 static bool put_user (uint8_t *udst, uint8_t byte);
 static void sys_exit(struct intr_frame *f);
+static void sys_write(struct intr_frame *f);
 
 void
 syscall_init (void) 
@@ -29,6 +30,8 @@ syscall_handler (struct intr_frame *f)
   }
   switch (call_number) {
       case SYS_WRITE:
+          sys_write(f);
+          break;
       case SYS_EXIT:
           sys_exit(f);
           break;
@@ -38,9 +41,30 @@ syscall_handler (struct intr_frame *f)
 }
 
 static void
+sys_write(struct intr_frame *f)
+{
+  uint32_t fd;
+  uint32_t buffer;
+  uint32_t size;
+
+  if(get_int_32(&fd, (uint32_t *) f->esp + 1) && get_int_32(&buffer, (uint32_t *) f->esp + 2) && get_int_32(&size, (uint32_t *) f->esp + 3))
+  {
+    if(fd == 1)
+    {
+      putbuf((const char *) buffer, (size_t) size);
+      f->eax = size; 
+    }
+  }
+  else
+  {
+    thread_exit();
+  }
+}
+
+static void
 sys_exit(struct intr_frame *f)
 {
-    int result;
+    uint32_t result;
     bool success = get_int_32(&result, (uint32_t *) f->esp + 1);
 
     /* We will terminate either way, but set the exit code only if the address
