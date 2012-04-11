@@ -231,15 +231,26 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
-
+  
+  printf("before for\n\n");
   /* Parse stack arguments and add tokens to thread stack */
   for(token = strtok_r((char *) file_name, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr))
   {
     size_t len = strlen(token);
-    *esp = (char *) (*esp) -  len;
-    memcpy((char*) (*esp), token, len);
-    argv[argc++] = *esp; 
+    printf("PHYSBASE is currently %x", PHYS_BASE); 
+    printf("ESP is currently: %x", *esp - 1);
+    printf("Got token %s of length %d\n", token, len);
+    *esp -=  len + 1;
+    printf("adjusted esp\n");
+    printf("ESP is currently: %x", *esp);
+    memcpy(*esp, token, len + 1);
+    printf("memcpy called");
+    argv[argc++] = *esp;
+    printf("storing in argv\n");
+
   }
+
+  printf("after for\n\n");
 
   /** Word align stack */
   while((int) (*esp) % 4 != 0)
@@ -255,9 +266,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
   int argc_tmp = argc - 1;
   while(argc_tmp >= 0)
   {
-    size_t len = strlen(argv[argc_tmp]);
-    *esp -= len;
-    memcpy((char *) (*esp), argv[argc_tmp], len);
+    *esp -= 4;
+    *((char **) *esp) = argv[argc_tmp];
     argc_tmp--;
   }
 
@@ -275,6 +285,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   
 
   /* Open executable file. */
+  printf("The program name is: %s", argv[0]);
   file = filesys_open (argv[0]);
   if (file == NULL) 
     {
