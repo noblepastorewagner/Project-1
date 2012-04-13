@@ -237,8 +237,10 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   /* Initialize thread. */
+  tid_t parent_tid = thread_tid();
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->parent = parent_tid;
 
   /* Initialize nice value and recent cpu to parent's value (not done in init_thread because
      there's not always a parent) */
@@ -369,6 +371,32 @@ thread_exit (void)
   thread_current ()->status = THREAD_DYING;
   schedule ();
   NOT_REACHED ();
+}
+
+/* Returns a pointer to the thread with given ID */
+struct thread *
+thread_get_by_id(tid_t id)
+{
+  struct list_elem *e;
+  struct thread *t;
+
+  enum intr_level i = intr_disable();
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+  {
+      t = list_entry (e, struct thread, allelem);
+      if (t->tid == id) {
+        goto found;
+      }
+  }
+  t = NULL;
+
+found:
+
+  intr_set_level(i);
+  
+  return t;
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -636,6 +664,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->nice = 0;
   t->recent_cpu = 0;
   t->current_lock = NULL;
+#ifdef USERPROG
+  sema_init(&t->wait_sem, 0);
+#endif
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

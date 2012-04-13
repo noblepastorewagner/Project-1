@@ -108,7 +108,10 @@ struct thread
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
     int exit_code;
+    struct semaphore wait_sem;   /* Initialized to zero. Up'd when process
+                                    terminates. (for wait() ). */
 #endif
+    tid_t parent;
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
@@ -137,6 +140,8 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+
+struct thread *thread_get_by_id(tid_t id);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);

@@ -18,6 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h"
+#include "devices/timer.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -90,10 +91,21 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  while(1)
-    barrier();
+    struct thread *t = thread_get_by_id(child_tid);
+    int exit_code;
+
+    if (t == NULL || t->parent != thread_tid()) {
+        return -1;
+    } else {
+        sema_down(&t->wait_sem);
+        exit_code = t->exit_code;
+        t->exit_code = -1;
+        sema_up(&t->wait_sem);
+    }
+
+    return exit_code;
 }
 
 /* Free the current process's resources. */
@@ -122,6 +134,11 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+  /* Up the wait semaphore, allowing parent process which may be wait()ing on
+   * us to continue */
+  sema_up(&thread_current()->wait_sem);
+  //timer_sleep(50);
 }
 
 /* Sets up the CPU for running user code in the current
