@@ -20,17 +20,18 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f) 
 {
-  printf ("system call! Thread: %s\n", thread_name());
+  //printf ("system call! Thread: %s\n", thread_name());
   /* Read the system call number off of caller's stack */
   uint32_t call_number;
   bool success = get_int_32(&call_number, (uint32_t *) f->esp);
   /* Terminate if invalid address */
   if (!success) {
-      printf("System call number pointer was bad.\n");
+      //DEBUG
+      //printf("System call number pointer was bad.\n");
       thread_exit();
   } else {
     //DEBUG
-    printf("syscall number %d\n", call_number);
+    //printf("syscall number %d\n", call_number);
   }
   switch (call_number) {
       case SYS_WRITE:
@@ -76,10 +77,10 @@ sys_exit(struct intr_frame *f)
     if (success) {
         thread_current()->exit_code = result;
         //DEBUG
-        printf("exit() succeeeding: code is %d\n", result);
-    } else {
-        printf("exit() had bad arg pointer\n", result);
-    }
+        //printf("exit() succeeeding: code is %d\n", result);
+    } //else {
+        //printf("exit() had bad arg pointer\n");
+    //}
 
     thread_exit();
 }
@@ -105,7 +106,7 @@ get_int_32 (uint32_t *result, const uint32_t *uaddr)
         if (uaddr_8 == -1) {
             return false;
         }
-        result += (uint32_t) uaddr_8 << (i << 3);
+        *result += (uint32_t) uaddr_8 << (i << 3);
     }
     return true;
 }

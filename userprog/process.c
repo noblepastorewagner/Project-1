@@ -364,7 +364,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   /** Push argc to stack */
   top_of_stack -= 4;
   stack_as_int = (int *)top_of_stack;
-  *stack_as_int = argc - 1;
+  *stack_as_int = argc;
 
   /** Push false return address to stack */
   top_of_stack -= 4;
@@ -376,7 +376,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
-  hex_dump(*esp, *esp, 100, true);
+  //hex_dump(*esp, *esp, 100, true);
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
