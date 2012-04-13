@@ -222,74 +222,28 @@ load (const char *file_name, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
-  char *argv[1024];
+  char *argv[200];
   int argc = 0;
   char *token, *saveptr;
+  char fn_cpy[256];
+
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
-  
-  printf("before for\n\n");
-  /* Parse stack arguments and add tokens to thread stack */
-  for(token = strtok_r((char *) file_name, " ", &saveptr); token != NULL; token = strtok_r(NULL, " ", &saveptr))
-  {
-    size_t len = strlen(token);
-    printf("PHYSBASE is currently %x", PHYS_BASE); 
-    printf("ESP is currently: %x", *esp - 1);
-    printf("Got token %s of length %d\n", token, len);
-    *esp -=  len + 1;
-    printf("adjusted esp\n");
-    printf("ESP is currently: %x", *esp);
-    memcpy(*esp, token, len + 1);
-    printf("memcpy called");
-    argv[argc++] = *esp;
-    printf("storing in argv\n");
 
-  }
+  strlcpy(fn_cpy, file_name, 256);
 
-  printf("after for\n\n");
-
-  /** Word align stack */
-  while((int) (*esp) % 4 != 0)
-  {
-    *esp -= 1;
-  }
-
-  /** Push final null argument */
-  *esp -= 4;
-  *((char *) (*esp)) = 0;
-
-  /** Push argument pointers onto the stack in reverse order */
-  int argc_tmp = argc - 1;
-  while(argc_tmp >= 0)
-  {
-    *esp -= 4;
-    *((char **) *esp) = argv[argc_tmp];
-    argc_tmp--;
-  }
-
-  /** Push argv base address to stack */
-  *esp -= 4;
-  memcpy((char *) (*esp), (char *) (*esp) + 4, (size_t) 4);
-
-  /** Push argc to stack */
-  *esp -= 4;
-  *((int *) *esp) = argc;
-
-  /** Push false return address to stack */
-  *esp -= 4;
-  *((void **) (*esp)) = 0;
-  
+  /* Parse filename from load string */
+  token = strtok_r(fn_cpy, " ", &saveptr);
 
   /* Open executable file. */
-  printf("The program name is: %s", argv[0]);
-  file = filesys_open (argv[0]);
+  file = filesys_open (token);
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", argv[0]);
+      printf ("load: %s: open failed\n", token);
       goto done; 
     }
 
@@ -302,7 +256,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024) 
     {
-      printf ("load: %s: error loading executable\n", argv[0]);
+      printf ("load: %s: error loading executable\n", token);
       goto done; 
     }
 
@@ -369,11 +323,60 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (!setup_stack (esp))
     goto done;
 
+  unsigned char* top_of_stack = *esp;
+
+  /* Parse stack arguments and push tokens to thread stack */
+  for(; token != NULL; token = strtok_r(NULL, " ", &saveptr))
+  {
+    size_t len = strlen(token) + 1;
+    top_of_stack -=  len;
+    memcpy(top_of_stack, token, len);
+    argv[argc++] = top_of_stack;
+    //printf("Stored %x in argv\n", top_of_stack);
+  }
+
+  /** Word align stack */
+  while((unsigned int) (top_of_stack) % 4 != 0)
+  {
+    top_of_stack -= 1;
+  }
+
+  /** Push final null argument */
+  top_of_stack -= 4;
+  int* stack_as_int = (int *)top_of_stack;
+  *stack_as_int = 0;
+
+  /** Push argument pointers onto the stack in reverse order */
+  int argc_tmp = argc - 1;
+  while(argc_tmp >= 0)
+  {
+    top_of_stack -= 4;
+    stack_as_int = top_of_stack;
+    *stack_as_int = argv[argc_tmp];
+    argc_tmp--;
+  }  
+
+  /** Push argv base address to stack */
+  top_of_stack -= 4;
+  stack_as_int = (int *)top_of_stack;
+  *stack_as_int = top_of_stack + 4;
+
+  /** Push argc to stack */
+  top_of_stack -= 4;
+  stack_as_int = (int *)top_of_stack;
+  *stack_as_int = argc - 1;
+
+  /** Push false return address to stack */
+  top_of_stack -= 4;
+  //*((void **) (*esp)) = 0;
+
+  *esp = top_of_stack;
+
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
-
+  hex_dump(*esp, *esp, 100, true);
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
