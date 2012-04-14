@@ -4,16 +4,27 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "filesys/filesys.h"
+#include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
 static int get_user (const uint8_t *uaddr);
 static bool put_user (uint8_t *udst, uint8_t byte);
 static void sys_exit(struct intr_frame *f);
 static void sys_write(struct intr_frame *f);
+static void sys_remove(struct intr_frame *f);
+static void sys_create(struct intr_frame *f);
+static void sys_open(struct intr_frame *f);
+
+struct file *fds[256];
 
 void
 syscall_init (void) 
 {
+  int i;
+  for (i = 0; i < 256; ++i) {
+      fds[i] = NULL;
+  }
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -40,9 +51,65 @@ syscall_handler (struct intr_frame *f)
       case SYS_EXIT:
           sys_exit(f);
           break;
+      case SYS_REMOVE:
+          sys_remove(f);
+          break;
+      case SYS_HALT:
+      case SYS_EXEC:
+      case SYS_WAIT:
+      case SYS_CREATE:
+          sys_create(f);
+          break;
+      case SYS_OPEN:
+          sys_open(f);
+          break;
+      case SYS_FILESIZE:
+      case SYS_READ:
+      case SYS_SEEK:
+      case SYS_TELL:
+      case SYS_CLOSE:
       default:
           thread_exit();
   }
+}
+
+static void
+sys_open(struct intr_frame *f)
+{
+    char *file;
+    if (get_int_32((uint32_t *) &file, (uint32_t *) f->esp + 1) && validate_address(file))
+    {
+        /* Find a free file descriptor */
+        int fd = 0;
+        int i;
+        for (i = 3; i < 256; ++i) {
+            if (fds[i] == NULL) {
+                fd = i;
+                break;
+            }
+        }
+        /* Return error if none available */
+        if (fd == 0) {
+            f->eax = -1;
+            return;
+        }
+        
+        /* Actually open the file */
+        struct file *file_ptr = filesys_open(file);
+        if (file_ptr == NULL) {
+            f->eax = -1;
+            return;
+        } else {
+            fds[fd] = file_ptr;
+            f->eax = fd;
+            return;
+        }
+    }
+    else
+    {
+        f->eax = -1;
+        thread_exit();
+    }
 }
 
 static void
@@ -84,6 +151,66 @@ sys_exit(struct intr_frame *f)
 
     thread_exit();
 }
+
+static void
+sys_remove(struct intr_frame *f)
+{
+    char *file;
+    if (!get_int_32((uint32_t *) & file, (uint32_t *) f->esp + 1))
+    {
+        f->eax = false;
+        thread_exit();
+    }
+    else if (!validate_address(file))
+    {
+        f->eax = false;
+        thread_exit();
+    }
+    else
+    {
+        f->eax = filesys_remove(file);
+    }
+}
+
+static void
+sys_create(struct intr_frame *f)
+{
+    char *file;
+    unsigned int initial_size;
+    if (!get_int_32((uint32_t *) & file, (uint32_t *) f->esp + 1))
+    {
+        f->eax = false;
+        thread_exit();
+    }
+    else if (!get_int_32((uint32_t *) & initial_size, (uint32_t *) f->esp + 2))
+    {
+        f->eax = false;
+        thread_exit();
+    }
+    else if (!validate_address(file))
+    {
+        f->eax = false;
+        thread_exit();
+    }
+    else
+    {
+        f->eax = filesys_create(file, initial_size);
+    }
+}
+
+/* Validate address by trying to read a byte at the address. */
+bool
+validate_address (const void *uaddr)
+{
+    /* Make sure address isn't in kernel memory */
+    if (uaddr >= PHYS_BASE) {
+        return false;
+    }
+
+    /* Make sure it's not NULL and owned by process */
+    return get_user((const uint8_t *) uaddr) != -1;
+}
+
 
 /* Reads a 32-bit int at user virtual address UADDR.
  * UADDR need not be valid. This function returns false if not (and the user
